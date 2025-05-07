@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model finance {
+  id            Int      @id @default(autoincrement())
+  estimate_cost Float
+  real_cost     Float?
+  description   String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime
+  projectId     Int
+  project       project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Finance_projectId_fkey")
+
+  @@index([projectId], map: "Finance_projectId_fkey")
+}
+
+model profile {
+  id                 Int          @id @default(autoincrement())
+  name               String
+  email              String       @unique(map: "Profile_email_key")
+  document_id        String       @unique(map: "Profile_document_id_key")
+  rg                 String?      @unique(map: "Profile_rg_key")
+  ie                 String?      @unique(map: "Profile_ie_key")
+  state_registration String?
+  birth_date         DateTime?
+  gender             String?
+  marital_status     String?
+  occupation         String?
+  company            String?
+  fantasy_name       String?
+  nationality        String?
+  address            String
+  address_number     String
+  complement         String?
+  city               String
+  state              String
+  zip_code           String
+  country            String
+  phone_number       String
+  notes              String?
+  is_active          Boolean      @default(true)
+  role               profile_role
+  created_at         DateTime     @default(now())
+  updated_at         DateTime
+  user               user         @relation(fields: [email], references: [email], onDelete: Cascade, map: "Profile_email_fkey")
+  task               task[]
+  team               team[]
+}
+
+model project {
+  id                    Int               @id @default(autoincrement())
+  name                  String
+  description           String
+  initial_date          DateTime
+  final_date            DateTime?
+  budget                Float?
+  status                project_status    @default(PLANNED)
+  completion_percentage Float             @default(0) // de 0 a 100
+  created_at            DateTime          @default(now())
+  updated_at            DateTime
+  finance               finance[]
+  projectsupplier       projectsupplier[]
+  task                  task[]
+  team                  team[]
+}
+
+model projectsupplier {
+  id         Int      @id @default(autoincrement())
+  projectId  Int
+  supplierId Int
+  created_at DateTime @default(now())
+  project    project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "ProjectSupplier_projectId_fkey")
+  supplier   supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade, map: "ProjectSupplier_supplierId_fkey")
+
+  @@index([projectId], map: "ProjectSupplier_projectId_fkey")
+  @@index([supplierId], map: "ProjectSupplier_supplierId_fkey")
+}
+
+model supplier {
+  id              Int               @id @default(autoincrement())
+  name            String
+  contact         String?
+  email           String?           @unique(map: "Supplier_email_key")
+  phone           String
+  address         String?
+  city            String?
+  state           String?
+  zip_code        String?
+  country         String?
+  cnpj            String?           @unique(map: "Supplier_cnpj_key")
+  document_id     String?           @unique(map: "Supplier_document_id_key")
+  notes           String?
+  created_at      DateTime          @default(now())
+  updated_at      DateTime
+  projectsupplier projectsupplier[]
+}
+
+model task {
+  id              Int         @id @default(autoincrement())
+  name            String
+  description     String?
+  due_date        DateTime?
+  status          task_status @default(PENDING)
+  initial_percent Float       @default(0)
+  final_percent   Float       @default(0)
+  value           Float
+  created_at      DateTime    @default(now())
+  updated_at      DateTime
+  projectId       Int
+  assignedToId    Int?
+  profile         profile?    @relation(fields: [assignedToId], references: [id], map: "Task_assignedToId_fkey")
+  project         project     @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Task_projectId_fkey")
+
+  @@index([assignedToId], map: "Task_assignedToId_fkey")
+  @@index([projectId], map: "Task_projectId_fkey")
+}
+
+model team {
+  id         Int      @id @default(autoincrement())
+  function   String
+  created_at DateTime @default(now())
+  projectId  Int
+  workerId   Int
+  project    project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Team_projectId_fkey")
+  profile    profile  @relation(fields: [workerId], references: [id], onDelete: Cascade, map: "Team_workerId_fkey")
+
+  @@index([projectId], map: "Team_projectId_fkey")
+  @@index([workerId], map: "Team_workerId_fkey")
+}
+
+model user {
+  email    String   @id @unique(map: "User_email_key")
+  password String
+  profile  profile?
+}
+
+enum task_status {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum project_status {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum profile_role {
+  ADMIN
+  GERENTE
+  CLIENTE
+  FUNCIONARIO
+  ENGENHEIRO
+}
