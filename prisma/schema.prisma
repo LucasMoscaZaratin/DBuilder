@@ -98,6 +98,7 @@ model supplier {
   notes           String?
   created_at      DateTime          @default(now())
   updated_at      DateTime
+  role            supplier_role     @default(ACTIVE)
   projectsupplier projectsupplier[]
 }
 
@@ -122,13 +123,14 @@ model task {
 }
 
 model team {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   function   String
-  created_at DateTime @default(now())
+  created_at DateTime  @default(now())
   projectId  Int
   workerId   Int
-  project    project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Team_projectId_fkey")
-  profile    profile  @relation(fields: [workerId], references: [id], onDelete: Cascade, map: "Team_workerId_fkey")
+  project    project   @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Team_projectId_fkey")
+  profile    profile   @relation(fields: [workerId], references: [id], onDelete: Cascade, map: "Team_workerId_fkey")
+  role       team_role @default(ACTIVE)
 
   @@index([projectId], map: "Team_projectId_fkey")
   @@index([workerId], map: "Team_workerId_fkey")
@@ -161,4 +163,14 @@ enum profile_role {
   CLIENTE
   FUNCIONARIO
   ENGENHEIRO
+}
+
+enum supplier_role {
+  ACTIVE
+  INACTIVE
+}
+
+enum team_role {
+  ACTIVE
+  INACTIVE
 }

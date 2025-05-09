@@ -9,7 +9,8 @@ const projectSupplierRoute = async (app: FastifyInstance) => {
     const result = projectSupplierSchema.safeParse(request.body);
 
     if (!result.success) {
-      return reply.status(400).send({ message: result.error.errors[0].message });
+      const errorMessage = result.error.errors[0].message;
+      return reply.status(400).send({ message: errorMessage });
     }
 
     try {
@@ -24,8 +25,8 @@ const projectSupplierRoute = async (app: FastifyInstance) => {
 
       return reply.status(201).send(projectSupplier);
     } catch (error) {
-      console.error(error);
-      return reply.status(500).send({ message: 'Internal server error' });
+      console.error('Erro ao criar relação projeto-fornecedor:', error);
+      return reply.status(500).send({ message: 'Erro interno ao criar relação projeto-fornecedor.' });
     }
   });
 
@@ -33,20 +34,26 @@ const projectSupplierRoute = async (app: FastifyInstance) => {
     const result = projectSupplierParamSchema.safeParse(request.params);
 
     if (!result.success) {
-      return reply.status(400).send({ message: result.error.errors[0].message });
+      const errorMessage = result.error.errors[0].message;
+      return reply.status(400).send({ message: errorMessage });
     }
 
     const id = Number(result.data.id);
 
-    const projectSupplier = await prisma.projectsupplier.findUnique({
-      where: { id },
-    });
+    try {
+      const projectSupplier = await prisma.projectsupplier.findUnique({
+        where: { id },
+      });
 
-    if (!projectSupplier) {
-      return reply.status(404).send({ message: 'Project Supplier not found' });
+      if (!projectSupplier) {
+        return reply.status(404).send({ message: 'Relação projeto-fornecedor não encontrada.' });
+      }
+
+      return reply.status(200).send(projectSupplier);
+    } catch (error) {
+      console.error('Erro ao buscar relação projeto-fornecedor:', error);
+      return reply.status(500).send({ message: 'Erro interno ao buscar relação projeto-fornecedor.' });
     }
-
-    return reply.status(200).send(projectSupplier);
   });
 };
 

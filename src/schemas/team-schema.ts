@@ -6,6 +6,7 @@ const TeamSchema = z.object({
   created_at: z.date().default(() => new Date()),
   projectId: z.number().int(),
   workerId: z.number().int(),
+  role: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
 });
 
 export default TeamSchema;

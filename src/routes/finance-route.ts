@@ -5,7 +5,7 @@ import financeSchema from '../schemas/finance-schema';
 const prisma = new PrismaClient();
 
 const financeRoute = async (app: FastifyInstance) => {
-  app.post('/finace', async (request, reply) => {
+  app.post('/finance', async (request, reply) => {
     const result = financeSchema.safeParse(request.body);
 
     if (!result.success) {
@@ -27,34 +27,45 @@ const financeRoute = async (app: FastifyInstance) => {
 
       return reply.status(201).send(finance);
     } catch (error) {
-      console.error(error);
-      return reply.status(500).send({ message: 'Internal server error' });
+      console.error('Erro ao criar registro financeiro:', error);
+      return reply.status(500).send({ message: 'Erro interno do servidor' });
     }
   });
-  app.get('/fince/:id', async (request, reply) => {
-    const result = financeSchema.safeParse(request.params);
-    if (!result.success) {
-      return reply.status(400).send({ message: result.error.errors[0].message });
-    }
-    const id = Number(result.data.id);
-    const projectFinance = await prisma.finance.findMany({
-      where: { id: id },
-    });
-    if (!projectFinance) {
-      return reply.status(404).send({ message: 'Finance not found' });
-    } else {
-      return reply.status(200).send(projectFinance);
-    }
-  });
-  app.put('/finance/:id', async (request, reply) => {
-    const result = financeSchema.safeParse(request.body);
-    if (!result.success) {
-      return reply.status(400).send({ message: result.error.errors[0].message });
+
+  app.get('/finance/:id', async (request, reply) => {
+    const id = Number((request.params as { id: string }).id);
+
+    if (isNaN(id)) {
+      return reply.status(400).send({ message: 'ID inválido' });
     }
 
+    try {
+      const projectFinance = await prisma.finance.findMany({
+        where: { id },
+      });
+
+      if (!projectFinance || projectFinance.length === 0) {
+        return reply.status(404).send({ message: 'Registro financeiro não encontrado' });
+      }
+
+      return reply.status(200).send(projectFinance);
+    } catch (error) {
+      console.error('Erro ao buscar registro financeiro:', error);
+      return reply.status(500).send({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  app.put('/finance/:id', async (request, reply) => {
     const id = Number((request.params as { id: string }).id);
-    if (!id || isNaN(id)) {
+
+    if (isNaN(id)) {
       return reply.status(400).send({ message: 'ID inválido' });
+    }
+
+    const result = financeSchema.safeParse(request.body);
+
+    if (!result.success) {
+      return reply.status(400).send({ message: result.error.errors[0].message });
     }
 
     try {
@@ -72,25 +83,36 @@ const financeRoute = async (app: FastifyInstance) => {
       });
 
       return reply.status(200).send(finance);
-    } catch (error) {
-      console.error(error);
-      return reply.status(500).send({ message: 'Internal server error' });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ message: 'Registro financeiro não encontrado' });
+      }
+
+      console.error('Erro ao atualizar registro financeiro:', error);
+      return reply.status(500).send({ message: 'Erro interno do servidor' });
     }
   });
+
   app.delete('/finance/:id', async (request, reply) => {
-    const result = financeSchema.safeParse(request.params);
-    if (!result.success) {
-      return reply.status(400).send({ message: result.error.errors[0].message });
+    const id = Number((request.params as { id: string }).id);
+
+    if (isNaN(id)) {
+      return reply.status(400).send({ message: 'ID inválido' });
     }
-    const id = Number(result.data.id);
+
     try {
       await prisma.finance.delete({
         where: { id },
       });
+
       return reply.status(204).send();
-    } catch (error) {
-      console.error(error);
-      return reply.status(500).send({ message: 'Internal server error' });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ message: 'Registro financeiro não encontrado' });
+      }
+
+      console.error('Erro ao deletar registro financeiro:', error);
+      return reply.status(500).send({ message: 'Erro interno do servidor' });
     }
   });
 };

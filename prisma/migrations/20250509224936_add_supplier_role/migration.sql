@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `supplier` ADD COLUMN `role` ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE';

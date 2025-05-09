@@ -16,6 +16,7 @@ const supplierSchema = z.object({
   notes: z.string().optional().nullable(),
   created_at: z.date().default(() => new Date()),
   updated_at: z.date(),
+  role: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
 });
 
 export default supplierSchema;

@@ -12,64 +12,17 @@ const profileRoute = async (app: FastifyInstance) => {
     }
 
     try {
-      const {
-        name,
-        email,
-        document_id,
-        rg,
-        ie,
-        state_registration,
-        birth_date,
-        gender,
-        marital_status,
-        occupation,
-        company,
-        fantasy_name,
-        nationality,
-        address,
-        address_number,
-        complement,
-        city,
-        state,
-        zip_code,
-        country,
-        phone_number,
-        notes,
-        is_active,
-        role,
-      } = result.data;
+      const data = result.data;
 
-      if (!Object.values(profile_role).includes(role as profile_role)) {
+      if (!Object.values(profile_role).includes(data.role as profile_role)) {
         return reply.status(400).send({ message: 'Role inválido' });
       }
 
       const profile = await prisma.profile.create({
         data: {
+          ...data,
+          role: data.role as profile_role,
           updated_at: new Date(),
-          name,
-          email,
-          document_id,
-          rg,
-          ie,
-          state_registration,
-          birth_date,
-          gender,
-          marital_status,
-          occupation,
-          company,
-          fantasy_name,
-          nationality,
-          address,
-          address_number,
-          complement,
-          city,
-          state,
-          zip_code,
-          country,
-          phone_number,
-          notes,
-          is_active,
-          role: role as profile_role,
         },
       });
 
@@ -79,59 +32,78 @@ const profileRoute = async (app: FastifyInstance) => {
       return reply.status(500).send({ message: 'Erro ao criar o perfil' });
     }
   });
+
   app.get('/profile', async (request, reply) => {
-    const profile = await prisma.profile.findFirst({
-      where: { name: (request.query as { name: string }).name },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone_number: true,
-      },
-    });
+    const { name } = request.query as { name?: string };
 
-    if (!profile) {
-      return reply.status(404).send({ message: 'Perfil não encontrado' });
-    } else {
+    if (!name) {
+      return reply.status(400).send({ message: 'Nome é obrigatório na query' });
+    }
+
+    try {
+      const profile = await prisma.profile.findFirst({
+        where: { name },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone_number: true,
+        },
+      });
+
+      if (!profile) {
+        return reply.status(404).send({ message: 'Perfil não encontrado' });
+      }
+
       return reply.send(profile);
+    } catch (err) {
+      console.error('Erro ao buscar perfil:', err);
+      return reply.status(500).send({ message: 'Erro ao buscar o perfil' });
     }
   });
+
   app.get('/profile/:id', async (request, reply) => {
-    const result = profileSchema.safeParse(request.params);
+    const id = Number((request.params as { id: string }).id);
 
-    if (!result.success) {
-      return reply.status(400).send({ message: 'Invalid ID', errors: result.error.errors });
+    if (isNaN(id)) {
+      return reply.status(400).send({ message: 'ID inválido' });
     }
 
-    const id = Number(result.data.id);
+    try {
+      const profile = await prisma.profile.findUnique({
+        where: { id },
+      });
 
-    const fullProfile = await prisma.profile.findUnique({
-      where: { id: id },
-    });
+      if (!profile) {
+        return reply.status(404).send({ message: 'Perfil não encontrado' });
+      }
 
-    if (!fullProfile) {
-      return reply.status(404).send({ message: 'Profile not found' });
-    } else {
-      return reply.send(fullProfile);
+      return reply.send(profile);
+    } catch (err) {
+      console.error('Erro ao buscar perfil por ID:', err);
+      return reply.status(500).send({ message: 'Erro ao buscar perfil' });
     }
   });
+
   app.put('/profile/:id', async (request, reply) => {
+    const id = Number((request.params as { id: string }).id);
+    if (isNaN(id)) {
+      return reply.status(400).send({ message: 'ID inválido' });
+    }
+
     const result = profileSchema.safeParse(request.body);
     if (!result.success) {
       return reply.status(400).send({ message: result.error.errors[0].message });
     }
 
-    const id = Number((request.params as { id: string }).id);
-    if (!id || isNaN(id)) {
-      return reply.status(400).send({ message: 'ID inválido' });
-    }
-
     try {
+      const data = result.data;
+
       const profile = await prisma.profile.update({
         where: { id },
         data: {
-          ...result.data,
-          role: result.data.role as profile_role,
+          ...data,
+          role: data.role as profile_role,
         },
       });
 
@@ -140,6 +112,8 @@ const profileRoute = async (app: FastifyInstance) => {
       if (error.code === 'P2025') {
         return reply.status(404).send({ message: 'Perfil não encontrado' });
       }
+
+      console.error('Erro ao atualizar perfil:', error);
       return reply.status(500).send({ message: 'Erro ao atualizar perfil' });
     }
   });
