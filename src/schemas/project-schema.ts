@@ -1,16 +1,10 @@
+// schemas/project-schema.ts
 import { z } from 'zod';
 
-export const projectStatusEnum = z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']); // ajuste conforme os valores reais
-
 export const projectSchema = z.object({
-  id: z.number().int().optional(),
-  name: z.string(),
-  description: z.string(),
-  initial_date: z.coerce.date(),
-  final_date: z.coerce.date().nullable().optional(),
-  budget: z.number().nullable(),
-  status: projectStatusEnum.default('PLANNED'),
-  completion_percentage: z.number().min(0).max(100).default(0),
-  created_at: z.coerce.date().default(new Date()),
-  updated_at: z.coerce.date(),
+  name: z.string().min(1, { message: 'Nome do projeto é obrigatório.' }),
+  description: z.string().min(1, { message: 'Descrição do projeto é obrigatória.' }),
+  budget: z.number().optional(),
+  status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  completion_percentage: z.number().min(0).max(100).optional(),
 });

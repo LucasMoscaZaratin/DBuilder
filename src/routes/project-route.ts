@@ -23,15 +23,19 @@ const projectRoute = async (app: FastifyInstance) => {
           initial_date: now,
           final_date: null,
           budget: budget ?? 0,
-          status: 'PLANNED',
+          status: 'PLANNED', // Definindo status padrão como 'PLANNED'
           completion_percentage: 0,
           created_at: now,
           updated_at: now,
         },
       });
 
-      return reply.status(201).send({ message: 'Projeto criado com sucesso!', project });
+      return reply.status(201).send({
+        message: 'Projeto criado com sucesso!',
+        project: { id: project.id, name: project.name, description: project.description },
+      });
     } catch (error) {
+      console.error('Erro ao criar projeto:', error);
       return reply.status(500).send({ message: 'Erro ao criar projeto', error });
     }
   });
@@ -40,12 +44,13 @@ const projectRoute = async (app: FastifyInstance) => {
   app.get('/projects', async (_request, reply) => {
     try {
       const projects = await prisma.project.findMany({
-        select: { id: true },
-        where: { NOT: { status: 'CANCELLED' } },
+        select: { id: true, name: true, description: true },
+        where: { NOT: { status: 'CANCELLED' } }, // Excluindo projetos cancelados
       });
 
       return reply.status(200).send({ projects });
     } catch (error) {
+      console.error('Erro ao buscar projetos:', error);
       return reply.status(500).send({ message: 'Erro ao buscar projetos', error });
     }
   });
@@ -86,22 +91,82 @@ const projectRoute = async (app: FastifyInstance) => {
       return reply.status(400).send({ message: result.error.errors[0].message });
     }
 
-    try {
-      const data = request.body as Record<string, any>;
-      const now = new Date();
+    const { status, name, description, budget, completion_percentage } = result.data;
 
+    // Validando status antes de atualizar o projeto
+    const validStatuses = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+    if (status && !validStatuses.includes(status)) {
+      return reply.status(400).send({ message: 'Status inválido.' });
+    }
+
+    try {
+      const now = new Date();
       const project = await prisma.project.update({
         where: { id: projectId },
         data: {
-          ...(typeof data === 'object' && data !== null ? data : {}),
-          status: data.status,
+          name,
+          description,
+          budget,
+          completion_percentage,
+          status,
           updated_at: now,
         },
       });
 
-      return reply.status(200).send({ message: 'Projeto atualizado com sucesso!', project });
-    } catch (error) {
-      return reply.status(500).send({ message: 'Erro ao atualizar projeto', error });
+      return reply.status(200).send({
+        message: 'Projeto atualizado com sucesso!',
+        project: { id: project.id, name: project.name, description: project.description },
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message) {
+        if (error.message.includes('P2025')) {
+          return reply.status(404).send({ message: 'Projeto não encontrado.' });
+        }
+
+        console.error('Erro ao atualizar projeto:', error);
+        return reply.status(500).send({ message: 'Erro ao atualizar projeto', error: error.message });
+      } else {
+        console.error('Erro desconhecido ao atualizar projeto:', error);
+        return reply.status(500).send({ message: 'Erro desconhecido ao atualizar projeto' });
+      }
+    }
+  });
+
+  // Deletar projeto (marcar como cancelado)
+  app.delete('/projects/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const projectId = Number(id);
+
+    if (Number.isNaN(projectId) || projectId <= 0) {
+      return reply.status(400).send({ message: 'ID inválido. Deve ser um número positivo.' });
+    }
+
+    try {
+      // Atualizando status para 'CANCELLED' em vez de excluir
+      const project = await prisma.project.update({
+        where: { id: projectId },
+        data: {
+          status: 'CANCELLED',
+          updated_at: new Date(),
+        },
+      });
+
+      return reply.status(200).send({
+        message: 'Projeto cancelado com sucesso.',
+        project,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message) {
+        if (error.message.includes('P2025')) {
+          return reply.status(404).send({ message: 'Projeto não encontrado.' });
+        }
+
+        console.error('Erro ao cancelar projeto:', error);
+        return reply.status(500).send({ message: 'Erro ao cancelar projeto', error: error.message });
+      } else {
+        console.error('Erro desconhecido ao cancelar projeto:', error);
+        return reply.status(500).send({ message: 'Erro desconhecido ao cancelar projeto' });
+      }
     }
   });
 };

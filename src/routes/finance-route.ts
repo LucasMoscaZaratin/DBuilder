@@ -40,15 +40,15 @@ const financeRoute = async (app: FastifyInstance) => {
     }
 
     try {
-      const projectFinance = await prisma.finance.findMany({
+      const finance = await prisma.finance.findUnique({
         where: { id },
       });
 
-      if (!projectFinance || projectFinance.length === 0) {
+      if (!finance) {
         return reply.status(404).send({ message: 'Registro financeiro não encontrado' });
       }
 
-      return reply.status(200).send(projectFinance);
+      return reply.status(200).send(finance);
     } catch (error) {
       console.error('Erro ao buscar registro financeiro:', error);
       return reply.status(500).send({ message: 'Erro interno do servidor' });

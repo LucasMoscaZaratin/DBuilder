@@ -48,9 +48,23 @@ model profile {
   role               profile_role
   created_at         DateTime     @default(now())
   updated_at         DateTime
-  user               user         @relation(fields: [email], references: [email], onDelete: Cascade, map: "Profile_email_fkey")
   task               task[]
-  team               team[]
+  // Times que o perfil participa (muitos para muitos)
+  team               team[]       @relation("TeamMembers")
+
+  // Definindo o relacionamento aqui com o campo `email` (único)
+  user user @relation(fields: [email], references: [email], onDelete: Cascade, map: "Profile_email_fkey")
+}
+
+model user {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String // Senha obrigatória
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Apenas o campo email, sem definir o relacionamento aqui
+  profile profile? // Referência para o modelo profile
 }
 
 model project {
@@ -123,23 +137,16 @@ model task {
 }
 
 model team {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   function   String
-  created_at DateTime  @default(now())
+  created_at DateTime @default(now())
   projectId  Int
-  workerId   Int
-  project    project   @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Team_projectId_fkey")
-  profile    profile   @relation(fields: [workerId], references: [id], onDelete: Cascade, map: "Team_workerId_fkey")
-  role       team_role @default(ACTIVE)
+  project    project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "Team_projectId_fkey")
 
-  @@index([projectId], map: "Team_projectId_fkey")
-  @@index([workerId], map: "Team_workerId_fkey")
-}
+  // Muitos perfis (workers) por time
+  teamMembers profile[] @relation("TeamMembers")
 
-model user {
-  email    String   @id @unique(map: "User_email_key")
-  password String
-  profile  profile?
+  role team_role @default(ACTIVE)
 }
 
 enum task_status {

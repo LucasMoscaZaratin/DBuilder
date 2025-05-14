@@ -9,6 +9,8 @@ import projectRoute from './routes/project-route';
 import supplierRoute from './routes/supplier-route';
 import teamRoute from './routes/team-route';
 import taskRoute from './routes/task-route';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = fastify();
 
@@ -26,6 +28,6 @@ app.register(cors, {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 });
 
-app.listen({ port: 3333 }).then(() => {
-  console.log('HTTP server runnign on port: 3333');
+app.listen({ port: 3000 }).then(() => {
+  console.log('HTTP server runnign on port: 3000');
 });

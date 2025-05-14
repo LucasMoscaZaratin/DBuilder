@@ -14,6 +14,7 @@ const profileRoute = async (app: FastifyInstance) => {
     try {
       const data = result.data;
 
+      // Verificando se o 'role' é válido antes de criar o perfil
       if (!Object.values(profile_role).includes(data.role as profile_role)) {
         return reply.status(400).send({ message: 'Role inválido' });
       }
@@ -99,6 +100,11 @@ const profileRoute = async (app: FastifyInstance) => {
     try {
       const data = result.data;
 
+      // Verificando se o 'role' é válido antes de atualizar o perfil
+      if (!Object.values(profile_role).includes(data.role as profile_role)) {
+        return reply.status(400).send({ message: 'Role inválido' });
+      }
+
       const profile = await prisma.profile.update({
         where: { id },
         data: {
@@ -115,6 +121,37 @@ const profileRoute = async (app: FastifyInstance) => {
 
       console.error('Erro ao atualizar perfil:', error);
       return reply.status(500).send({ message: 'Erro ao atualizar perfil' });
+    }
+  });
+
+  // Método para "deletar" o perfil, alterando is_active para false
+  app.delete('/profile/:id', async (request, reply) => {
+    const id = Number((request.params as { id: string }).id);
+
+    if (isNaN(id)) {
+      return reply.status(400).send({ message: 'ID inválido' });
+    }
+
+    try {
+      // Atualizando o campo is_active para false
+      const profile = await prisma.profile.update({
+        where: { id },
+        data: {
+          is_active: false, // Desativa o perfil
+        },
+      });
+
+      return reply.status(200).send({
+        message: 'Perfil desativado com sucesso.',
+        profile,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return reply.status(404).send({ message: 'Perfil não encontrado' });
+      }
+
+      console.error('Erro ao desativar perfil:', error);
+      return reply.status(500).send({ message: 'Erro ao desativar perfil' });
     }
   });
 };

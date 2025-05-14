@@ -1,22 +1,16 @@
 import { z } from 'zod';
 
-const supplierSchema = z.object({
-  id: z.number().int(), // id é um inteiro autoincrementado
+export const supplierSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  contact: z.string().optional(),
-  email: z.string().email('E-mail inválido').nullable(),
-  phone: z.string().min(1, 'Telefone é obrigatório'),
-  address: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-  zip_code: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),
-  cnpj: z.string().optional().nullable(),
-  document_id: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  created_at: z.date().default(() => new Date()),
-  updated_at: z.date(),
-  role: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  contact: z.string().min(1, 'Contato é obrigatório'),
+  email: z.string().email('Email inválido'),
+  phone: z.string().min(10, 'Telefone é obrigatório'),
+  address: z.string().min(1, 'Endereço é obrigatório'),
+  city: z.string().min(1, 'Cidade é obrigatória'),
+  state: z.string().min(2, 'Estado é obrigatório'),
+  zip_code: z.string().min(5, 'CEP é obrigatório'),
+  country: z.string().min(1, 'País é obrigatório'),
+  cnpj: z.string().min(14, 'CNPJ é obrigatório'),
 });
 
 export default supplierSchema;
