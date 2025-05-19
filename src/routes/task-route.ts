@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
 import TaskSchema from '../schemas/task-schema';
+import { startOfDay, endOfDay } from 'date-fns';
 
 const prisma = new PrismaClient();
 
@@ -147,6 +148,63 @@ const taskRoute = async (app: FastifyInstance) => {
       return reply
         .status(500)
         .send({ message: 'Erro ao excluir tarefa', error: error instanceof Error ? error.message : error });
+    }
+  });
+
+  app.get('/tasks/summary', async (_request, reply) => {
+    const now = new Date();
+    const start = startOfDay(now);
+    const end = endOfDay(now);
+
+    try {
+      const openTasks = await prisma.task.count({
+        where: {
+          status: {
+            in: ['PENDING', 'IN_PROGRESS'],
+          },
+        },
+      });
+
+      const openTasksToday = await prisma.task.count({
+        where: {
+          created_at: {
+            gte: start,
+            lte: end,
+          },
+          status: {
+            in: ['PENDING', 'IN_PROGRESS'],
+          },
+        },
+      });
+
+      const completedToday = await prisma.task.count({
+        where: {
+          status: 'COMPLETED',
+          updated_at: {
+            gte: start,
+            lte: end,
+          },
+        },
+      });
+
+      const totalCompleted = await prisma.task.count({
+        where: {
+          status: 'COMPLETED',
+        },
+      });
+
+      return reply.status(200).send({
+        openTasksToday,
+        openTasks,
+        completedToday,
+        totalCompleted,
+      });
+    } catch (error: unknown) {
+      console.error('Erro ao buscar resumo de tarefas:', error);
+      return reply.status(500).send({
+        message: 'Erro ao buscar resumo de tarefas',
+        error: error instanceof Error ? error.message : error,
+      });
     }
   });
 };

@@ -10,6 +10,7 @@ import supplierRoute from './routes/supplier-route';
 import teamRoute from './routes/team-route';
 import taskRoute from './routes/task-route';
 import dotenv from 'dotenv';
+import reportRoute from './routes/report-route';
 dotenv.config();
 
 const app = fastify();
@@ -22,6 +23,7 @@ app.register(supplierRoute);
 app.register(projectRoute);
 app.register(teamRoute);
 app.register(taskRoute);
+app.register(reportRoute);
 
 app.register(cors, {
   origin: '*',

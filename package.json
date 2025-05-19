@@ -16,8 +16,10 @@
   "description": "",
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/date-fns": "^2.5.3",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.15.3",
+    "@types/pdfkit": "^0.13.9",
     "prisma": "^6.7.0",
     "tsup": "^8.4.0",
     "tsx": "^4.19.4",
@@ -30,6 +32,7 @@
     "dotenv": "^16.5.0",
     "fastify": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
+    "pdfkit": "^0.17.1",
     "uuid": "^11.1.0",
     "zod": "^3.24.3"
   }
